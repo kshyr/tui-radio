@@ -1,23 +1,17 @@
-package tui
+package client
 
 import (
-	"bufio"
-	"encoding/json"
-	"fmt"
-	"net/http"
-
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/kshyr/tui-radio/internal/audio"
-	"gitlab.com/AgentNemo/goradios"
+	"github.com/kshyr/tui-radio/internal/radio"
 )
 
-type Client struct{}
-
 var baseStyle = lipgloss.NewStyle().
-	BorderStyle(lipgloss.NormalBorder()).
-	BorderForeground(lipgloss.Color("240"))
+	BorderStyle(lipgloss.RoundedBorder()).
+	BorderForeground(lipgloss.Color("240")).
+	AlignHorizontal(lipgloss.Center)
 
 type model struct {
 	table table.Model
@@ -48,11 +42,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-	return baseStyle.Render(m.table.View()) + "\n"
+	return lipgloss.JoinHorizontal(
+		lipgloss.Center,
+		baseStyle.Render(m.table.View()),
+		baseStyle.Render(m.table.View()),
+	)
 }
 
 func (m model) Init() tea.Cmd {
-	// Just return `nil`, which means "no I/O right now, please."
 	return nil
 }
 
@@ -66,7 +63,7 @@ func DefaultClient() *tea.Program {
 
 	rows := []table.Row{}
 
-	stations := goradios.FetchStations(goradios.StationsByCountry, "Germany")
+	stations := radio.GetStations()
 	for _, station := range stations {
 		newRow := make([]string, 3)
 		newRow[0] = station.Name
@@ -79,7 +76,7 @@ func DefaultClient() *tea.Program {
 		table.WithColumns(columns),
 		table.WithRows(rows),
 		table.WithFocused(true),
-		table.WithHeight(7),
+		table.WithHeight(20),
 	)
 
 	s := table.DefaultStyles()
@@ -101,21 +98,4 @@ func DefaultClient() *tea.Program {
 func NewClient(table table.Model) *tea.Program {
 	m := model{table}
 	return tea.NewProgram(m)
-}
-
-func Listen(url string) (string, error) {
-	resp, err := http.Get(url)
-	if err != nil {
-		return "", err
-	}
-	scanner := bufio.NewScanner(resp.Body)
-	for scanner.Scan() {
-		foo := make(map[string]interface{})
-		err := json.Unmarshal([]byte(scanner.Text()), &foo)
-		if err != nil {
-			return "", err
-		}
-		fmt.Println(foo)
-	}
-	return scanner.Text(), nil
 }

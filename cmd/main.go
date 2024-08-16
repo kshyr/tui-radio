@@ -1,14 +1,10 @@
 package main
 
 import (
-	"github.com/kshyr/tui-radio/internal/tui"
-)
-
-const (
-	ExampleStationURL = "https://icecast.walmradio.com:8443/classic"
+	"github.com/kshyr/tui-radio/internal/client"
 )
 
 func main() {
-	c := tui.DefaultClient()
+	c := client.DefaultClient()
 	c.Run()
 }
